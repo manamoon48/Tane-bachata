@@ -11,7 +11,7 @@ export function defaultState(): State {
     tagFilter: [],
     items: presetItems(),
     history: [],
-    settings: { sound: true, recentPenalty: true, recentDays: 3, effect: 'roulette', drawStyle: 'normal', vetoPlayers: 2, vetoEach: 1 },
+    settings: { sound: true, recentPenalty: true, recentDays: 3, effect: 'roulette', drawStyle: 'normal', vetoPlayers: 2, vetoEach: 1, retryLimit: 0 },
   };
 }
 

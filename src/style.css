@@ -132,7 +132,7 @@ a { color: inherit; }
 .badge { font-size: 10px; background: var(--chip); color: var(--sub); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
 
 /* ---------- 抽選画面 ---------- */
-.fx-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.fx-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .fx-opt {
   border: 2px solid var(--line); background: var(--card); border-radius: 14px;
   display: flex; flex-direction: column; align-items: center; padding: 8px 2px; font-size: 12px; font-weight: 700;
@@ -663,3 +663,95 @@ a { color: inherit; }
 /* ---------- プリンコ ---------- */
 .fx-plinko { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .plinko { display: block; border-radius: 14px; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.15); touch-action: none; }
+
+/* ---------- 第3弾 ---------- */
+.stage.fx-darts-bg { background: radial-gradient(circle at 50% 35%, #3a2f22, #110c08 75%); }
+.stage.fx-amida-bg { background: radial-gradient(circle at 50% 20%, #1f4a4a, #081616 75%); }
+.stage.fx-cards-bg { background: radial-gradient(circle at 50% 40%, #1d5a35, #07170d 80%); }
+
+/* ダーツ */
+.fx-darts { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; touch-action: manipulation; }
+.dart-wrap { position: relative; filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.6)); }
+.dart-board { display: block; }
+.dart-stuck { position: absolute; left: 0; top: 0; pointer-events: none; }
+.dart-aim {
+  position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; pointer-events: none;
+  border: 3px solid #ff4a5a; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7), 0 0 14px #ff4a5a;
+}
+.dart-aim::before, .dart-aim::after { content: ""; position: absolute; background: #ff4a5a; }
+.dart-aim::before { left: 50%; top: -10px; bottom: -10px; width: 2px; margin-left: -1px; }
+.dart-aim::after { top: 50%; left: -10px; right: -10px; height: 2px; margin-top: -1px; }
+/* 先端が (0,0) に来るダーツ */
+.dart { position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 3; pointer-events: none; }
+.dart i {
+  position: absolute; left: -3px; bottom: 0; width: 6px; height: 54px; transform: rotate(-18deg); transform-origin: 50% 100%;
+  background: linear-gradient(180deg, transparent 0 14px, #9aa 14px 40px, #555 40px 50px, #ddd 50px);
+  border-radius: 3px 3px 1px 1px; filter: drop-shadow(2px 4px 3px rgba(0, 0, 0, 0.5));
+}
+.dart i::before {
+  content: ""; position: absolute; left: -7px; top: 0; width: 20px; height: 18px;
+  background: linear-gradient(90deg, #ff4a5a 0 45%, #c41f33 45%); clip-path: polygon(50% 0, 100% 100%, 50% 80%, 0 100%);
+}
+
+/* あみだ */
+.fx-amida { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.amida { display: block; }
+.amida-row { display: flex; }
+.amida-row > * { flex: 1; display: flex; justify-content: center; }
+.amida-start {
+  position: relative; flex: 1; height: 40px; border: 0; background: none; color: #fff; padding: 0;
+  display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px;
+}
+.amida-start::after {
+  content: ""; position: absolute; width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.5); z-index: -1;
+}
+.ready .amida-start::after { animation: amida-pulse 1s ease-in-out infinite; border-color: #ffd84a; }
+@keyframes amida-pulse { 50% { transform: scale(1.15); box-shadow: 0 0 12px #ffd84a; } }
+.amida-start.on { color: #3a2a20; }
+.amida-start.on::after { background: #ffd84a; border-color: #ffd84a; }
+.amida-goal { position: relative; height: 66px; perspective: 400px; }
+.amida-cover, .amida-face {
+  position: absolute; left: 2px; right: 2px; top: 0; bottom: 0; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; transition: transform 0.45s;
+}
+.amida-cover { background: linear-gradient(135deg, #ff6b4a, #c41f33); font-size: 24px; font-weight: 900; }
+.amida-face { background: #fff; color: #3a2a20; transform: rotateY(180deg); padding: 2px; }
+.amida-goal.open .amida-cover { transform: rotateY(-180deg); }
+.amida-goal.open .amida-face { transform: rotateY(0); }
+.amida-goal.open:not(.win) .amida-face { opacity: 0.55; }
+.amida-goal.win .amida-face { box-shadow: 0 0 0 3px #ffd84a, 0 0 20px #ffd84a; }
+.amida-emoji { font-size: 26px; line-height: 1.1; }
+.amida-name { font-size: 10px; font-weight: 800; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* カード */
+.fx-cards { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 30px; }
+.pcard-table { position: relative; width: 100%; height: 200px; display: flex; justify-content: center; }
+.pcard {
+  position: absolute; top: 20px; width: 100px; height: 146px; border: 0; padding: 0; background: none; perspective: 600px;
+  transition: transform 0.22s ease-in-out;
+}
+.pcard-front, .pcard-back {
+  position: absolute; inset: 0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; transition: transform 0.5s cubic-bezier(0.3, 1.2, 0.5, 1);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+}
+.pcard-front { background: #fffaf0; color: #3a2a20; border: 3px solid #e8d3a8; }
+.pcard-back {
+  transform: rotateY(180deg); color: rgba(255, 255, 255, 0.9); font-size: 40px; font-weight: 900; border: 3px solid #fff;
+  background: repeating-linear-gradient(45deg, #c41f33 0 8px, #a3172a 8px 16px);
+}
+.pcard.flipped .pcard-front { transform: rotateY(-180deg); }
+.pcard.flipped .pcard-back { transform: rotateY(0); }
+.pcard-emoji { font-size: 46px; line-height: 1; }
+.pcard-name { font-size: 13px; font-weight: 800; max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pcard.lift { z-index: 2; }
+.pcard.lift .pcard-back { box-shadow: 0 18px 30px rgba(0, 0, 0, 0.55); }
+.ready .pcard .pcard-back { animation: card-hover 1.2s ease-in-out infinite; }
+.ready .pcard:nth-child(2) .pcard-back { animation-delay: 0.2s; }
+.ready .pcard:nth-child(3) .pcard-back { animation-delay: 0.4s; }
+@keyframes card-hover { 50% { box-shadow: 0 0 0 3px #ffd84a, 0 14px 24px rgba(0, 0, 0, 0.5); } }
+.pcard.chosen { z-index: 3; transition: transform 0.45s cubic-bezier(0.3, 1.4, 0.5, 1); }
+.pcard.chosen.rare .pcard-front { border-color: #f5b700; box-shadow: 0 0 30px #ffd84a; }
+.pcard.chosen.super .pcard-front { border-color: #fff; box-shadow: 0 0 20px #ff8fc2, 0 0 40px #4aa8ff; }
+.pcard.other { opacity: 0.45; filter: grayscale(0.6); }
+.pcard-other-label { position: absolute; bottom: -24px; font-size: 13px; opacity: 0.7; animation: prize-pop 0.4s; }

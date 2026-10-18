@@ -26,6 +26,14 @@ export function renderSettings(root: HTMLElement): void {
             ),
           ])
         : null,
+      h('label', { class: 'setting' }, [
+        h('span', { class: 'setting-text' }, [h('b', {}, 'やり直し回数'), h('small', {}, '結果画面の「もう一回」を押せる回数')]),
+        h(
+          'select',
+          { onChange: (e: Event) => update((st) => { st.settings.retryLimit = Number((e.target as HTMLSelectElement).value); }) },
+          [0, 1, 2, 3].map((n) => h('option', { value: String(n), selected: n === s.settings.retryLimit }, n ? `${n}回まで` : '無制限')),
+        ),
+      ]),
     ]),
     h('section', { class: 'card' }, [
       h('div', { class: 'card-title' }, 'データ'),

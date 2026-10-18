@@ -57,6 +57,8 @@ export interface DrawOptions {
   effect?: EffectId;
   /** 拒否権などで外した項目 */
   exclude?: Set<string>;
+  /** 「もう一回」で何回目のやり直しか（最初の抽選は 0） */
+  attempt?: number;
 }
 
 export async function runDraw(opts: DrawOptions = {}): Promise<void> {
@@ -82,7 +84,8 @@ export async function runDraw(opts: DrawOptions = {}): Promise<void> {
     st.overlay.addEventListener('pointerdown', () => abort.abort(), { once: true });
     await sleep(RESULT_HOLD_MS, abort.signal);
   }
-  showResult(st, winner, rarity, cands.length, () => void runDraw({ ...opts, effect: effectId }));
+  const attempt = opts.attempt ?? 0;
+  showResult(st, winner, rarity, cands.length, attempt, () => void runDraw({ ...opts, effect: effectId, attempt: attempt + 1 }));
 }
 
 function searchUrl(item: Item): { label: string; url: string } {
@@ -93,7 +96,7 @@ function searchUrl(item: Item): { label: string; url: string } {
   return { label: '🗺️ 地図で探す', url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` };
 }
 
-export function showResult(st: Stage, c: Candidate, rarity: Rarity, count: number, retry: () => void): void {
+export function showResult(st: Stage, c: Candidate, rarity: Rarity, count: number, attempt: number, retry: () => void): void {
   const it = c.item;
   const link = searchUrl(it);
   const rarityBadge = rarity === 'super' ? '🌈 超レア！' : rarity === 'rare' ? '✨ レア！' : null;
@@ -111,11 +114,18 @@ export function showResult(st: Stage, c: Candidate, rarity: Rarity, count: numbe
   };
   st.skip.remove();
   // 決定しても画面は閉じず、調べる・共有はそのまま使えるようにする
-  const again = h('button', { class: 'btn ghost', onClick: () => { st.close(); setTimeout(retry, 280); } }, '🔁 もう一回');
+  // やり直し回数の制限（0 は無制限）
+  const limit = getState().settings.retryLimit;
+  const left = limit ? limit - attempt : Infinity;
+  const again = h(
+    'button',
+    { class: 'btn ghost', disabled: left <= 0, onClick: () => { st.close(); setTimeout(retry, 280); } },
+    left <= 0 ? '🔒 やり直し終了' : limit ? `🔁 もう一回（あと${left}回）` : '🔁 もう一回',
+  );
   const decide = h('button', { class: 'primary' }, 'これにする！');
   const card = h('div', { class: `result ${rarity}` }, [
     rarityBadge ? h('div', { class: 'rarity' }, rarityBadge) : null,
-    h('div', { class: 'result-lead' }, '今日はこれに決定！'),
+    h('div', { class: 'result-lead' }, left <= 0 ? '泣いても笑っても、これに決定！' : '今日はこれに決定！'),
     h('div', { class: 'result-emoji' }, it.emoji),
     h('div', { class: 'result-name' }, it.name),
     h('div', { class: 'result-meta' }, [
