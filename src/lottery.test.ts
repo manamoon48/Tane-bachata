@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCandidates, levelWeight, pick, rarityOf, RECENT_FACTOR } from './lottery';
+import { buildCandidates, levelWeight, pick, rarityOf, RECENT_FACTOR, sampleWeighted } from './lottery';
 import type { Item, Level } from './types';
 
 const item = (id: string, level: Level = 0, extra: Partial<Item> = {}): Item => ({
@@ -71,5 +71,18 @@ describe('rarityOf', () => {
     expect(rarityOf(c[0], 4)).toBe('super');
     expect(rarityOf(c[1], 4)).toBe('rare');
     expect(rarityOf(c[3], 4)).toBe('normal');
+  });
+});
+
+describe('sampleWeighted', () => {
+  it('重複なしで n 件、must を必ず含む', () => {
+    const c = buildCandidates(['a', 'b', 'c', 'd', 'e'].map((id) => item(id)), { mode: 'home' });
+    for (let i = 0; i < 50; i++) {
+      const s = sampleWeighted(c, 3, c[4]);
+      expect(s).toHaveLength(3);
+      expect(new Set(s).size).toBe(3);
+      expect(s).toContain(c[4]);
+    }
+    expect(sampleWeighted(c, 10)).toHaveLength(5);
   });
 });

@@ -82,3 +82,13 @@ export function formatProb(p: number): string {
   if (pct >= 1) return `${pct.toFixed(1)}%`;
   return `${pct.toFixed(2)}%`;
 }
+
+/** 重みに応じて n 件を重複なしで選ぶ（must は必ず含める） */
+export function sampleWeighted(cands: Candidate[], n: number, must?: Candidate, rand: () => number = Math.random): Candidate[] {
+  const pool = cands.filter((c) => c !== must);
+  const out = must ? [must] : [];
+  while (out.length < n && pool.length) {
+    out.push(pool.splice(pool.indexOf(pick(pool, rand)), 1)[0]);
+  }
+  return out;
+}
