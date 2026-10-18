@@ -183,40 +183,40 @@ function showResult(overlay: HTMLElement, stage: HTMLElement, c: Candidate, rari
       /* キャンセル */
     }
   };
-  stage.replaceChildren(
-    h('div', { class: `result ${rarity}` }, [
-      rarityBadge ? h('div', { class: 'rarity' }, rarityBadge) : null,
-      h('div', { class: 'result-lead' }, '今日はこれに決定！'),
-      h('div', { class: 'result-emoji' }, it.emoji),
-      h('div', { class: 'result-name' }, it.name),
-      h('div', { class: 'result-meta' }, [
-        it.category ? `${it.category}・` : '',
-        `確率 ${formatProb(c.prob)}（${count}件中）`,
-        c.recent ? '・最近食べた' : '',
-      ]),
-      h('div', { class: 'result-actions' }, [
-        h(
-          'button',
-          {
-            class: 'primary',
-            onClick: () => {
-              update((st) => {
-                st.history.unshift({ id: uid(), itemId: it.id, name: it.name, emoji: it.emoji, mode: it.mode, at: Date.now() });
-                st.history = st.history.slice(0, 300);
-              });
-              toast(`${it.emoji} ${it.name} を履歴に記録しました`);
-              close(overlay);
-            },
-          },
-          'これにする！',
-        ),
-        h('a', { class: 'btn', href: link.url, target: '_blank', rel: 'noopener' }, link.label),
-        h('button', { class: 'btn', onClick: () => void share() }, '📤 共有'),
-        h('button', { class: 'btn ghost', onClick: () => { close(overlay); setTimeout(() => void runDraw(effectId), 280); } }, '🔁 もう一回'),
-        h('button', { class: 'btn ghost', onClick: () => close(overlay) }, '閉じる'),
-      ]),
+  // 決定しても画面は閉じず、調べる・共有はそのまま使えるようにする
+  const retry = h('button', { class: 'btn ghost', onClick: () => { close(overlay); setTimeout(() => void runDraw(effectId), 280); } }, '🔁 もう一回');
+  const decide = h('button', { class: 'primary' }, 'これにする！');
+  const card = h('div', { class: `result ${rarity}` }, [
+    rarityBadge ? h('div', { class: 'rarity' }, rarityBadge) : null,
+    h('div', { class: 'result-lead' }, '今日はこれに決定！'),
+    h('div', { class: 'result-emoji' }, it.emoji),
+    h('div', { class: 'result-name' }, it.name),
+    h('div', { class: 'result-meta' }, [
+      it.category ? `${it.category}・` : '',
+      `確率 ${formatProb(c.prob)}（${count}件中）`,
+      c.recent ? '・最近食べた' : '',
     ]),
-  );
+    h('div', { class: 'result-actions' }, [
+      decide,
+      h('a', { class: 'btn', href: link.url, target: '_blank', rel: 'noopener' }, link.label),
+      h('button', { class: 'btn', onClick: () => void share() }, '📤 共有'),
+      retry,
+      h('button', { class: 'btn ghost', onClick: () => close(overlay) }, '閉じる'),
+    ]),
+  ]);
+  decide.addEventListener('click', () => {
+    update((st) => {
+      st.history.unshift({ id: uid(), itemId: it.id, name: it.name, emoji: it.emoji, mode: it.mode, at: Date.now() });
+      st.history = st.history.slice(0, 300);
+    });
+    decide.disabled = true;
+    decide.textContent = '✓ 履歴に記録しました';
+    retry.disabled = true;
+    card.append(h('div', { class: 'stamp' }, '決定'));
+    sfx.stop();
+    vibrate(50);
+  }, { once: true });
+  stage.replaceChildren(card);
   sfx.fanfare(rarity);
   vibrate(rarity === 'normal' ? 40 : [60, 40, 60, 40, 120]);
   confetti(rarity, it.emoji);

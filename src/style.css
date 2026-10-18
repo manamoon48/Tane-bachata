@@ -465,3 +465,16 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .go, .slot-lamps i, .rays, .result.super .result-emoji { animation: none; }
 }
+
+/* 決定スタンプ */
+.result { position: relative; }
+.result-actions button:disabled { opacity: 0.4; }
+.result-actions .primary:disabled { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.25); color: #fff; opacity: 1; font-size: 17px; }
+.stamp {
+  position: absolute; top: 18%; right: 4%; pointer-events: none;
+  width: 92px; height: 92px; border-radius: 50%; border: 5px solid #e8132b; color: #e8132b;
+  display: grid; place-items: center; font-size: 30px; font-weight: 900; font-family: "Hiragino Mincho ProN", serif;
+  background: rgba(255, 255, 255, 0.92); transform: rotate(-14deg);
+  animation: stamp 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes stamp { from { transform: rotate(-14deg) scale(2.6); opacity: 0; } }

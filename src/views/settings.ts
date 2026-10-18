@@ -30,20 +30,24 @@ export function renderSettings(root: HTMLElement): void {
     h('section', { class: 'card' }, [
       h('div', { class: 'card-title' }, 'データ'),
       h('p', { class: 'note' }, 'データはこの端末のブラウザ内だけに保存されます。機種変更の際はバックアップをどうぞ。'),
+      h('p', { class: 'note' }, '「消したサンプルを戻す」は、最初から入っているサンプルのうち今のリストに無いものだけを追加します（自分で追加・編集したものはそのまま）。'),
       h('div', { class: 'btn-col' }, [
         h('button', { class: 'btn', onClick: exportData }, '📦 バックアップ（コピー）'),
         h('button', { class: 'btn', onClick: importData }, '📥 バックアップから復元'),
         h('button', {
           class: 'btn',
           onClick: () => {
-            if (!confirm('サンプルのメニュー・お店を追加しますか？（今のリストは残ります）')) return;
+            if (!confirm('サンプルのうち、今のリストに無いものを追加します。今のリストはそのまま残ります。よろしいですか？')) return;
+            let added = 0;
             update((st) => {
               const names = new Set(st.items.map((i) => `${i.mode}:${i.kind}:${i.name}`));
-              st.items.push(...presetItems().filter((i) => !names.has(`${i.mode}:${i.kind}:${i.name}`)));
+              const missing = presetItems().filter((i) => !names.has(`${i.mode}:${i.kind}:${i.name}`));
+              added = missing.length;
+              st.items.push(...missing);
             });
-            toast('サンプルを追加しました');
+            toast(added ? `サンプルを${added}件追加しました` : '追加できるサンプルはありません');
           },
-        }, '🍱 サンプルを追加'),
+        }, '🍱 消したサンプルを戻す'),
         h('button', {
           class: 'btn danger',
           onClick: () => {
