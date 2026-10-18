@@ -1,6 +1,7 @@
 import { sfx, vibrate } from '../sound';
 import type { Rarity } from '../types';
 import { choice, h, rand, sleep } from '../ui';
+import { waitCrank } from './crank';
 import type { FxContext } from './index';
 
 const PLAIN = ['#4aa8ff', '#4ad6a6', '#ff8fc2', '#c56bff', '#ff9f43'];
@@ -11,64 +12,6 @@ function capsule(color: string, cls = ''): HTMLElement {
 
 function colorFor(r: Rarity): string {
   return r === 'super' ? 'rainbow' : r === 'rare' ? 'gold' : choice(PLAIN);
-}
-
-/** ハンドルを一周（ドラッグ or 3回タップ）させるまで待つ */
-function waitCrank(dial: HTMLElement, globe: HTMLElement, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    let total = 0;
-    let lastStep = 0;
-    let prevAngle: number | null = null;
-    let done = false;
-    let moved = 0;
-    const setRot = () => {
-      dial.style.transform = `rotate(${total}deg)`;
-      const step = Math.floor(total / 90);
-      if (step > lastStep) {
-        lastStep = step;
-        sfx.crank();
-        vibrate(15);
-        globe.classList.remove('shake');
-        void globe.offsetWidth;
-        globe.classList.add('shake');
-      }
-      if (total >= 360 && !done) {
-        done = true;
-        resolve();
-      }
-    };
-    const angle = (e: PointerEvent) => {
-      const b = dial.getBoundingClientRect();
-      return (Math.atan2(e.clientY - (b.top + b.height / 2), e.clientX - (b.left + b.width / 2)) * 180) / Math.PI;
-    };
-    dial.addEventListener('pointerdown', (e) => {
-      dial.setPointerCapture(e.pointerId);
-      prevAngle = angle(e);
-      moved = 0;
-    });
-    dial.addEventListener('pointermove', (e) => {
-      if (prevAngle === null) return;
-      const a = angle(e);
-      let d = a - prevAngle;
-      if (d > 180) d -= 360;
-      if (d < -180) d += 360;
-      prevAngle = a;
-      moved += Math.abs(d);
-      total += Math.abs(d);
-      setRot();
-    });
-    dial.addEventListener('pointerup', () => {
-      prevAngle = null;
-      // ほぼ動かさなければタップ扱いで 120° 回す
-      if (moved < 10) {
-        dial.classList.add('smooth');
-        total = (Math.floor(total / 120) + 1) * 120;
-        setRot();
-        setTimeout(() => dial.classList.remove('smooth'), 250);
-      }
-    });
-    signal.addEventListener('abort', () => resolve());
-  });
 }
 
 export async function gacha(ctx: FxContext): Promise<void> {
@@ -91,7 +34,22 @@ export async function gacha(ctx: FxContext): Promise<void> {
   const scene = h('div', { class: 'fx-gacha' }, [caption, machine]);
   stage.append(scene);
 
-  await waitCrank(dial, globe, signal);
+  await waitCrank(
+    dial,
+    {
+      totalDeg: 360,
+      stepDeg: 90,
+      tapDeg: 120,
+      onStep: () => {
+        sfx.crank();
+        vibrate(15);
+        globe.classList.remove('shake');
+        void globe.offsetWidth;
+        globe.classList.add('shake');
+      },
+    },
+    signal,
+  );
   if (signal.aborted) return;
   caption.textContent = '';
 
