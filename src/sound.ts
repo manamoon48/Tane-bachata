@@ -132,4 +132,47 @@ export const sfx = {
       arpeggio([523, 659, 784, 1047], 0.08, { type: 'triangle', vol: 0.14 });
     }
   },
+  /** 福引の「カランカラン」 */
+  bell(times = 6) {
+    for (let i = 0; i < times; i++) {
+      const at = i * 0.16;
+      tone(1320, 0.5, { type: 'sine', vol: 0.12, at });
+      tone(2640 * 1.01, 0.3, { type: 'sine', vol: 0.05, at });
+      tone(3960 * 0.99, 0.2, { type: 'sine', vol: 0.03, at });
+    }
+  },
+  rattle() {
+    for (let i = 0; i < 4; i++) noise(0.04, 0.25, i * 0.05, 1500 + i * 400);
+  },
+  paper() {
+    noise(0.35, 0.12, 0, 5000);
+  },
+  peg(pitch = 1) {
+    const now = performance.now();
+    if (now - lastTick < 20) return;
+    lastTick = now;
+    tone(900 * pitch, 0.05, { type: 'triangle', vol: 0.08 });
+  },
+  gun() {
+    noise(0.25, 0.6, 0, 800);
+    tone(120, 0.2, { type: 'square', vol: 0.15, slideTo: 40 });
+  },
+  raceFanfare() {
+    const n = [523, 523, 523, 659, 784, 659, 784, 1047];
+    const d = [0.12, 0.12, 0.12, 0.24, 0.24, 0.12, 0.12, 0.6];
+    let at = 0;
+    n.forEach((f, i) => {
+      tone(f, d[i] * 1.1, { type: 'square', vol: 0.08, at });
+      at += d[i];
+    });
+  },
+  gallop() {
+    tone(180, 0.05, { type: 'triangle', vol: 0.12 });
+    tone(150, 0.05, { type: 'triangle', vol: 0.1, at: 0.08 });
+    tone(170, 0.05, { type: 'triangle', vol: 0.1, at: 0.16 });
+  },
+  cheer(dur = 1.5) {
+    noise(dur, 0.18, 0, 900);
+    noise(dur * 0.8, 0.12, 0.1, 1600);
+  },
 };

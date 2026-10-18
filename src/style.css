@@ -132,7 +132,7 @@ a { color: inherit; }
 .badge { font-size: 10px; background: var(--chip); color: var(--sub); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
 
 /* ---------- 抽選画面 ---------- */
-.fx-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.fx-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .fx-opt {
   border: 2px solid var(--line); background: var(--card); border-radius: 14px;
   display: flex; flex-direction: column; align-items: center; padding: 8px 2px; font-size: 12px; font-weight: 700;
@@ -351,7 +351,7 @@ a { color: inherit; }
 .slot-banner {
   position: absolute; left: 50%; top: 0; z-index: 2; transform: translate(-50%, -50%) scale(0.3) rotate(-8deg);
   font-size: 44px; font-weight: 900; white-space: nowrap; pointer-events: none; opacity: 0;
-  -webkit-text-stroke: 2px #3a0a0a; color: #fff; text-shadow: 0 4px 0 #3a0a0a;
+  -webkit-text-stroke: 6px #3a0a0a; paint-order: stroke fill; color: #fff; text-shadow: 0 4px 0 #3a0a0a;
   transition: transform 0.35s cubic-bezier(0.3, 1.8, 0.5, 1), opacity 0.2s;
 }
 .slot-banner.show { opacity: 1; transform: translate(-50%, -75%) scale(1) rotate(-6deg); }
@@ -465,3 +465,201 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .go, .slot-lamps i, .rays, .result.super .result-emoji { animation: none; }
 }
+
+/* 決定スタンプ */
+.result { position: relative; }
+.result-actions button:disabled { opacity: 0.4; }
+.result-actions .primary:disabled { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.25); color: #fff; opacity: 1; font-size: 17px; }
+.stamp {
+  position: absolute; top: 18%; right: 4%; pointer-events: none;
+  width: 92px; height: 92px; border-radius: 50%; border: 5px solid #e8132b; color: #e8132b;
+  display: grid; place-items: center; font-size: 30px; font-weight: 900; font-family: "Hiragino Mincho ProN", serif;
+  background: rgba(255, 255, 255, 0.92); transform: rotate(-14deg);
+  animation: stamp 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes stamp { from { transform: rotate(-14deg) scale(2.6); opacity: 0; } }
+/* ---------- 第2弾: 決め方 ---------- */
+.veto-opts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.mini-stepper { display: flex; align-items: center; gap: 6px; background: var(--chip); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 13px; }
+.mini-stepper span { color: var(--sub); font-weight: 700; }
+.mini-stepper b { min-width: 2.4em; text-align: center; }
+.mini-stepper button { width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--card); font-weight: 800; font-size: 16px; }
+
+.stage.veto-bg { background: radial-gradient(circle at 50% 20%, #3b2a4f, #140d1c 75%); }
+.stage.fx-fukubiki-bg { background: radial-gradient(circle at 50% 30%, #7a1c1c, #2a0808 75%); }
+.stage.fx-omikuji-bg { background: radial-gradient(circle at 50% 30%, #2d3b2a, #0c120b 75%); }
+.stage.fx-sushi-bg { background: linear-gradient(180deg, #2a1d14, #120c08); }
+.stage.fx-race-bg { background: linear-gradient(180deg, #1f4a7a 0%, #0f2440 60%, #0a1a10); }
+.stage.fx-plinko-bg { background: radial-gradient(circle at 50% 20%, #23325c, #0b1022 75%); }
+
+.handoff { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: result-in 0.4s cubic-bezier(0.3, 1.4, 0.5, 1); }
+.handoff-icon { font-size: 80px; line-height: 1.1; }
+.handoff-title { font-size: 28px; font-weight: 900; }
+.handoff-sub { opacity: 0.75; }
+.veto-list { font-size: 18px; font-weight: 700; max-width: 320px; }
+.primary.big { min-height: 58px; min-width: 240px; font-size: 19px; margin-top: 10px; }
+.btn.big-ghost { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.25); color: #fff; min-height: 52px; }
+
+.veto { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 14px; min-height: 0; max-height: 100%; }
+.veto-title { font-size: 20px; font-weight: 900; text-align: center; }
+.veto-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; overflow-y: auto; min-height: 0; padding: 4px; }
+.veto-grid.elim { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.veto-card {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  border: 2px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.08); color: #fff;
+  border-radius: 14px; padding: 10px 4px; transition: transform 0.25s, opacity 0.3s, background 0.2s;
+}
+.veto-emoji { font-size: 32px; line-height: 1.1; }
+.veto-name { font-size: 13px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.veto-card.on { background: rgba(229, 72, 77, 0.35); border-color: #ff6b6b; }
+.veto-card.on::after, .veto-card.gone::after {
+  content: "✕"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 56px; font-weight: 900; color: #ff4a5a;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.veto-card.gone { opacity: 0.35; }
+.veto-by { font-size: 10px; opacity: 0.8; }
+.elim .veto-card { padding: 16px 6px; }
+.elim .veto-emoji { font-size: 44px; }
+.elim .veto-name { font-size: 15px; }
+.elim-x { position: absolute; top: 6px; right: 8px; font-size: 14px; opacity: 0.6; }
+.elim .veto-card.gone { transform: scale(0.85) rotate(-4deg); }
+.elim .veto-card.gone .elim-x { display: none; }
+.veto-card.last { background: rgba(255, 216, 74, 0.25); border-color: #ffd84a; transform: scale(1.1); animation: reel-win 0.4s ease-in-out 3; z-index: 1; }
+
+/* ---------- 福引 ---------- */
+.fx-fuku { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+.fuku-banner { background: #fff; color: #c41f33; font-weight: 900; padding: 6px 18px; border-radius: 6px; letter-spacing: 0.1em; box-shadow: 0 4px 0 #8d0f1b; }
+.fuku-machine { position: relative; width: 300px; height: 300px; }
+.fuku-machine.dim > :not(.fuku-ball) { filter: brightness(0.35) blur(1px); transition: filter 0.4s; }
+.fuku-drum { position: absolute; left: 50px; top: 10px; width: 190px; height: 190px; z-index: 2; touch-action: none; cursor: grab; }
+.fuku-drum.smooth { transition: transform 0.3s ease-out; }
+.fuku-oct {
+  position: absolute; inset: 0;
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  background: repeating-conic-gradient(from 22.5deg, #c98a4b 0 45deg, #a86a32 45deg 90deg);
+  display: grid; place-items: center;
+}
+.fuku-oct::before {
+  content: ""; position: absolute; inset: 14px;
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  background: repeating-conic-gradient(from 22.5deg, #e0a868 0 45deg, #c98a4b 45deg 90deg);
+}
+.fuku-hub { position: relative; width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fff3c4, #c99700); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); }
+.fuku-arm { position: absolute; left: 50%; top: 50%; width: 118px; height: 12px; margin-top: -6px; transform-origin: 0 50%; background: linear-gradient(180deg, #ddd, #888); border-radius: 6px; }
+.fuku-knob { position: absolute; right: -10px; top: -10px; width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ff8a8a, #c41f33); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4); }
+.fuku-stand { position: absolute; left: 80px; top: 140px; width: 130px; height: 150px; background: linear-gradient(180deg, #7a4a20, #4a2a10); clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%); }
+.fuku-chute { position: absolute; left: 140px; top: 204px; width: 125px; height: 10px; background: #e8e8e8; border-radius: 5px; transform: rotate(20deg); transform-origin: 0 50%; box-shadow: 0 3px 4px rgba(0, 0, 0, 0.4); z-index: 1; }
+.fuku-tray { position: absolute; left: 228px; top: 248px; width: 72px; height: 24px; background: linear-gradient(180deg, #f2f2f2, #b5b5b5); border-radius: 4px 4px 36px 36px; z-index: 1; }
+.fuku-ball { position: absolute; left: 134px; top: 186px; width: 22px; height: 22px; border-radius: 50%; z-index: 3; opacity: 0; box-shadow: inset -3px -3px 5px rgba(0, 0, 0, 0.3); }
+.fuku-ball.show { opacity: 1; }
+.fuku-ball.red { background: radial-gradient(circle at 35% 30%, #ff9a9a, #d4202f); }
+.fuku-ball.blue { background: radial-gradient(circle at 35% 30%, #9ac8ff, #2a6ef5); }
+.fuku-ball.green { background: radial-gradient(circle at 35% 30%, #a8f0c8, #2fb986); }
+.fuku-ball.white { background: radial-gradient(circle at 35% 30%, #fff, #cfcfcf); }
+.fuku-ball.gold { background: radial-gradient(circle at 35% 30%, #fff3c4, #f5b700 60%, #a87a00); box-shadow: 0 0 14px #ffd84a; }
+.fuku-ball.rainbow { background: linear-gradient(135deg, #ff4a4a, #ffc94a, #4ad6a6, #4aa8ff, #c56bff); background-size: 200% 200%; animation: rainbow 1.2s linear infinite; box-shadow: 0 0 18px #fff; }
+.fuku-call {
+  position: absolute; top: 2%; left: 50%; transform: translateX(-50%) rotate(-6deg); white-space: nowrap;
+  font-size: 40px; font-weight: 900; color: #fff; -webkit-text-stroke: 6px #7a0a0a; paint-order: stroke fill; text-shadow: 0 4px 0 #7a0a0a;
+  animation: prize-pop 0.5s cubic-bezier(0.3, 1.8, 0.5, 1); z-index: 4;
+}
+.fuku-call.rare { color: #ffd84a; }
+.fuku-call.super { color: #fff; text-shadow: 0 0 20px #ff8fc2, 0 4px 0 #7a0a0a; }
+.fuku-noshi {
+  position: absolute; left: 50%; top: 52%; transform: translateX(-50%); z-index: 4;
+  background: #fff; color: #3a2a20; border: 3px solid #c41f33; border-radius: 6px; padding: 10px 24px; text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); animation: prize-pop 0.5s 0.2s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; min-width: 220px;
+}
+.noshi-tier { font-size: 30px; font-weight: 900; color: #c41f33; letter-spacing: 0.2em; }
+.fuku-noshi.rare .noshi-tier { color: #c99700; }
+.fuku-noshi.super .noshi-tier { background: linear-gradient(90deg, #ff4a4a, #ffc94a, #4ad6a6, #4aa8ff, #c56bff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.noshi-name { font-size: 22px; font-weight: 800; }
+
+/* ---------- おみくじ ---------- */
+.fx-kuji { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+.kuji-box { position: relative; width: 110px; height: 230px; cursor: pointer; transition: transform 0.6s cubic-bezier(0.5, -0.3, 0.4, 1.3), opacity 0.5s; touch-action: manipulation; }
+.kuji-body {
+  position: absolute; inset: 0; border-radius: 10px;
+  background: linear-gradient(90deg, #7a4a20, #c98a4b 30%, #e0a868 50%, #c98a4b 70%, #7a4a20);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.5); border: 3px solid #4a2a10;
+}
+.kuji-body span { background: #fff; color: #c41f33; width: 52px; height: 52px; display: grid; place-items: center; font-size: 34px; font-weight: 900; font-family: serif; border-radius: 4px; }
+.kuji-box.shake { animation: kuji-shake 0.35s ease-in-out; }
+@keyframes kuji-shake { 25% { transform: translateY(-24px) rotate(-10deg); } 50% { transform: translateY(8px) rotate(8deg); } 75% { transform: translateY(-12px) rotate(-4deg); } }
+.kuji-box.flip { transform: rotate(180deg); }
+.kuji-box.away { opacity: 0; transform: rotate(180deg) translateY(-60px); }
+.kuji-stick {
+  position: absolute; left: 50%; top: 0; width: 18px; height: 150px; margin-left: -9px;
+  background: linear-gradient(90deg, #e8d3a8, #fff3d6, #e8d3a8); border-radius: 3px;
+  transition: transform 0.6s cubic-bezier(0.3, 1.4, 0.5, 1);
+  display: flex; justify-content: center;
+}
+.kuji-stick span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 12px; font-weight: 900; color: #c41f33; margin-top: 8px; font-family: serif; white-space: nowrap; }
+.kuji-stick.out { transform: translateY(-120px); }
+.kuji-motion { border: 1px solid rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.1); color: #fff; border-radius: 999px; padding: 10px 18px; font-weight: 700; }
+.kuji-paper {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  writing-mode: vertical-rl; display: flex; flex-direction: column; gap: 12px; align-items: center;
+  background: #fffaf0; color: #3a2a20; padding: 22px 18px; border-radius: 4px; height: min(400px, 70vh); white-space: nowrap; justify-content: center;
+  border: 2px solid #c41f33; box-shadow: 0 0 0 6px #fffaf0, 0 0 0 8px #c41f33, 0 20px 40px rgba(0, 0, 0, 0.6);
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+  animation: unroll 1.1s ease-out;
+}
+@keyframes unroll { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
+.kuji-col { font-weight: 700; font-size: 16px; }
+.kuji-col.head { color: #c41f33; font-size: 15px; }
+.kuji-col.luck { writing-mode: horizontal-tb; display: flex; flex-direction: column; font-size: 64px; font-weight: 900; color: #c41f33; line-height: 1.05; }
+.kuji-col.luck.daikichi { animation: daikichi 1s 1.1s ease-in-out infinite; text-shadow: 0 0 12px #ffd84a; }
+@keyframes daikichi { 50% { transform: scale(1.08); } }
+.kuji-col.menu { font-size: 30px; font-weight: 900; border-left: 1px dashed #c41f33; border-right: 1px dashed #c41f33; padding: 0 8px; }
+.kuji-emoji { display: inline-block; margin-bottom: 6px; writing-mode: horizontal-tb; }
+.kuji-col.small { font-size: 13px; color: #6a5544; }
+.kuji-paper.super { box-shadow: 0 0 0 6px #fffaf0, 0 0 0 8px #c99700, 0 0 40px #ffd84a, 0 20px 40px rgba(0, 0, 0, 0.6); }
+
+/* ---------- 回転寿司 ---------- */
+.fx-sushi { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.sushi-noren { display: flex; gap: 4px; }
+.sushi-noren span { width: 48px; height: 64px; background: #233b6e; color: #fff; display: grid; place-items: start center; padding-top: 8px; font-size: 24px; font-weight: 900; border-radius: 0 0 6px 6px; font-family: serif; }
+.sushi-counter { position: relative; width: 100%; display: flex; justify-content: center; }
+.sushi-lane {
+  position: relative; height: 150px; overflow: hidden; max-width: 100vw;
+  background: repeating-linear-gradient(90deg, #6d6d6d 0 6px, #858585 6px 24px);
+  border-top: 10px solid #b9b9b9; border-bottom: 10px solid #4d4d4d;
+}
+.sushi-belt { position: absolute; inset: 0; }
+.sushi-spot { position: absolute; left: 50%; top: 0; bottom: 0; width: 110px; margin-left: -55px; background: linear-gradient(180deg, rgba(255, 230, 150, 0.25), transparent); pointer-events: none; }
+.plate {
+  position: absolute; left: 0; top: 14px; width: 96px; height: 96px; border-radius: 50%;
+  background: radial-gradient(circle, var(--plate) 52%, #fff 54%, var(--plate) 60%, #ddd 100%);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; color: #3a2a20;
+}
+.plate.rare { background: radial-gradient(circle, #ffe98a 52%, #fff3c4 54%, #f5b700 70%, #a87a00 100%); box-shadow: 0 0 20px #ffd84a; }
+.plate.super { background: conic-gradient(#ff4a4a, #ffc94a, #4ad6a6, #4aa8ff, #c56bff, #ff4a4a); box-shadow: 0 0 24px #fff; }
+.plate-emoji { font-size: 40px; line-height: 1; }
+.plate-name { font-size: 11px; font-weight: 800; max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: rgba(255, 255, 255, 0.85); border-radius: 6px; padding: 0 4px; margin-top: 2px; }
+.sushi-chop { position: absolute; left: 50%; top: -90px; font-size: 60px; transform: translateX(-30%) rotate(20deg); opacity: 0; transition: transform 0.4s, opacity 0.3s; pointer-events: none; }
+.sushi-chop.grab { opacity: 1; transform: translateX(-30%) translateY(60px) rotate(20deg); }
+
+/* ---------- レース ---------- */
+.fx-race { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+.race-title { text-align: center; font-size: 24px; font-weight: 900; }
+.ticker { min-height: 2.8em; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 16px; display: flex; align-items: center; }
+.track { position: relative; background: linear-gradient(180deg, #3e8e3a, #2f7a2c); border-radius: 12px; padding: 6px 0; border: 4px solid #fff; }
+.lane { position: relative; height: 52px; border-bottom: 2px dashed rgba(255, 255, 255, 0.35); }
+.lane:last-of-type { border-bottom: 0; }
+.lane-name { position: absolute; left: 8px; top: 2px; font-size: 10px; font-weight: 800; opacity: 0.8; white-space: nowrap; max-width: 60%; overflow: hidden; text-overflow: ellipsis; }
+.runner { position: absolute; left: 0; bottom: 2px; width: 44px; height: 40px; display: flex; align-items: center; justify-content: center; will-change: transform; }
+.runner-emoji { font-size: 32px; line-height: 1; transform: scaleX(-1); }
+.running .runner-emoji { animation: gallop 0.33s ease-in-out infinite; }
+@keyframes gallop { 50% { transform: scaleX(-1) translateY(-5px) rotate(6deg); } }
+.runner-no { position: absolute; left: 0; bottom: 0; background: #fff; color: #3a2a20; font-size: 10px; font-weight: 900; width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; }
+.goal { position: absolute; right: 22px; top: 0; bottom: 0; width: 6px; background: repeating-linear-gradient(180deg, #fff 0 6px, #111 6px 12px); }
+.track.final { box-shadow: 0 0 24px rgba(255, 216, 74, 0.7); }
+.lane.win { background: rgba(255, 216, 74, 0.3); }
+.lane.win .runner { filter: drop-shadow(0 0 8px #ffd84a); }
+
+/* ---------- プリンコ ---------- */
+.fx-plinko { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.plinko { display: block; border-radius: 14px; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.15); touch-action: none; }
