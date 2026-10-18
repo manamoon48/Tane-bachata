@@ -154,7 +154,7 @@ export async function roulette(ctx: FxContext): Promise<void> {
   const base = POINTER - target;
   const end = base + Math.ceil((rot - base) / TAU) * TAU + spins * TAU;
   const startRot = rot;
-  const dur = (tease ? 6500 : 4800) + power * 800;
+  const dur = (tease ? 9750 : 7200) + power * 1200;
   const exp = tease ? 5 : 4;
   let last = sectorAt(secs, rot);
   const t0 = performance.now();
