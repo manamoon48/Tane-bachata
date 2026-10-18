@@ -1,0 +1,17 @@
+{
+  "name": "なんでもいいよ — ごはん抽選",
+  "short_name": "なんでもいいよ",
+  "description": "「今日何食べたい？」「なんでもいい」を解決する、ごはん抽選アプリ",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff7ec",
+  "theme_color": "#ff6b4a",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
