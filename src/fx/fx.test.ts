@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildCandidates } from '../lottery';
 import type { Item } from '../types';
+import { makeAmida, trace } from './amida';
 import { findPath, makeBoard } from './plinko';
 import { planRace, progressAt } from './race';
 
@@ -62,5 +63,25 @@ describe('plinko', () => {
       const slot = b.slots.findIndex((s) => last.x >= s.x0 && last.x < s.x1);
       expect(slot).toBe(target);
     });
+  });
+});
+
+describe('amida', () => {
+  it('どのスタートも別々のゴールにたどり着く（全単射）', () => {
+    for (let n = 2; n <= 6; n++) {
+      for (let k = 0; k < 30; k++) {
+        const a = makeAmida(n);
+        const ends = Array.from({ length: n }, (_, s) => trace(a, s).end);
+        expect(new Set(ends).size).toBe(n);
+      }
+    }
+  });
+
+  it('同じ段で隣り合う横線は作らない', () => {
+    for (let k = 0; k < 50; k++) {
+      for (const row of makeAmida(6).rungs) {
+        for (const j of row) expect(row.includes(j + 1)).toBe(false);
+      }
+    }
   });
 });

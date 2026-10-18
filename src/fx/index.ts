@@ -1,4 +1,7 @@
 import type { Candidate, EffectId, Rarity } from '../types';
+import { amida } from './amida';
+import { cards } from './cards';
+import { darts } from './darts';
 import { fukubiki } from './fukubiki';
 import { gacha } from './gacha';
 import { omikuji } from './omikuji';
@@ -30,6 +33,9 @@ export const EFFECTS: Record<EffectId, { label: string; icon: string; run: Fx }>
   sushi: { label: '回転寿司', icon: '🍣', run: sushi },
   race: { label: 'レース', icon: '🏇', run: race },
   plinko: { label: 'プリンコ', icon: '⚪', run: plinko },
+  darts: { label: 'ダーツ', icon: '🎯', run: darts },
+  amida: { label: 'あみだ', icon: '🪜', run: amida },
+  cards: { label: 'カード', icon: '🃏', run: cards },
 };
 
 export const EFFECT_IDS = Object.keys(EFFECTS) as EffectId[];

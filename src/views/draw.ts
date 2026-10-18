@@ -97,7 +97,7 @@ export function renderDraw(root: HTMLElement): void {
       h('div', { class: 'card-title' }, '決め方'),
       segmented<DrawStyle>(
         [
-          { value: 'normal', label: '🎯 抽選' },
+          { value: 'normal', label: '🍀 抽選' },
           { value: 'veto', label: '🙅 拒否権' },
           { value: 'elim', label: '✂️ 消去法' },
         ],

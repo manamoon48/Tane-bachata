@@ -105,7 +105,7 @@ function pickVetoes(st: Stage, cands: Candidate[], vetoed: Map<string, number>, 
 const ELIM_MAX = 8;
 
 /** 消去法モード：候補を1つずつ✕して、最後に残ったものに決定 */
-export async function runElim(): Promise<void> {
+export async function runElim(attempt = 0): Promise<void> {
   const s = getState();
   const all = currentCandidates(s);
   if (all.length < 2) return toast('候補が2件以上必要です');
@@ -164,5 +164,5 @@ export async function runElim(): Promise<void> {
   sfx.reach();
   await sleep(1300);
   if (!st.overlay.isConnected) return;
-  showResult(st, winner, rarityOf(winner, all.length), all.length, () => void runElim());
+  showResult(st, winner, rarityOf(winner, all.length), all.length, attempt, () => void runElim(attempt + 1));
 }
