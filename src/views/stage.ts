@@ -5,7 +5,7 @@ import { uid } from '../presets';
 import { sfx, unlockAudio, vibrate } from '../sound';
 import { getState, update } from '../store';
 import type { Candidate, EffectId, Item, Rarity, State } from '../types';
-import { choice, h, toast } from '../ui';
+import { choice, h, sleep, toast } from '../ui';
 
 export function currentCandidates(s: State, exclude?: Set<string>): Candidate[] {
   return buildCandidates(
@@ -50,6 +50,9 @@ export function openStage(bg: string): Stage | null {
   return { overlay, body, skip, close };
 }
 
+/** 演出が終わってから結果画面に切り替えるまでの溜め */
+const RESULT_HOLD_MS = 2000;
+
 export interface DrawOptions {
   effect?: EffectId;
   /** 拒否権などで外した項目 */
@@ -73,6 +76,11 @@ export async function runDraw(opts: DrawOptions = {}): Promise<void> {
     await EFFECTS[effectId].run({ stage: st.body, cands, winner, rarity, signal: abort.signal });
   } catch (e) {
     console.error(e);
+  }
+  // 演出の結末を見届けられるよう、結果画面に切り替える前に溜める（タップで早送り）
+  if (!abort.signal.aborted) {
+    st.overlay.addEventListener('pointerdown', () => abort.abort(), { once: true });
+    await sleep(RESULT_HOLD_MS, abort.signal);
   }
   showResult(st, winner, rarity, cands.length, () => void runDraw({ ...opts, effect: effectId }));
 }

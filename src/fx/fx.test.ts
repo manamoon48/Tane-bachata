@@ -10,11 +10,16 @@ const items: Item[] = Array.from({ length: 12 }, (_, i) => ({
 const cands = buildCandidates(items, { mode: 'home' });
 
 describe('race', () => {
+  const runners = cands.slice(0, 6);
+  const spread = (plans: ReturnType<typeof planRace>, t: number) => {
+    const xs = plans.map((p) => progressAt(p, t));
+    return Math.max(...xs) - Math.min(...xs);
+  };
+
   it('勝者が必ず最初にゴールし、各馬は後退しない', () => {
-    for (let n = 0; n < 50; n++) {
-      const runners = cands.slice(0, 6);
+    for (let n = 0; n < 60; n++) {
       const winner = runners[n % 6];
-      const plans = planRace(runners, winner, n % 2 === 0);
+      const plans = planRace(runners, winner, (['front', 'comeback', 'pack'] as const)[n % 3]);
       for (const p of plans) {
         let prev = 0;
         for (let t = 0; t <= 1.3; t += 0.01) {
@@ -25,6 +30,25 @@ describe('race', () => {
         if (p.c === winner) expect(progressAt(p, 1)).toBeCloseTo(1);
         else expect(progressAt(p, 1)).toBeLessThan(1);
       }
+    }
+  });
+
+  it('序盤は団子、終盤は下位が離れて上位が競る', () => {
+    for (let n = 0; n < 60; n++) {
+      const winner = runners[n % 6];
+      const style = n % 2 ? 'front' : 'comeback';
+      const plans = planRace(runners, winner, style);
+      expect(spread(plans, 0.4)).toBeLessThan(0.05);
+      const atGoal = plans.map((p) => progressAt(p, 1)).sort((a, b) => b - a);
+      expect(atGoal[0] - atGoal[1]).toBeLessThan(0.04); // 上位は接戦
+      expect(atGoal[0] - atGoal[atGoal.length - 1]).toBeGreaterThan(0.07); // 最下位は離れる
+    }
+  });
+
+  it('団子パターンは最後まで横一線', () => {
+    for (let n = 0; n < 30; n++) {
+      const plans = planRace(runners, runners[n % 6], 'pack');
+      for (const t of [0.4, 0.7, 0.85, 1]) expect(spread(plans, t)).toBeLessThan(0.06);
     }
   });
 });
