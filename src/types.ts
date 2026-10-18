@@ -2,7 +2,9 @@ export type Mode = 'home' | 'out';
 export type OutKind = 'shop' | 'genre';
 /** -3 は「除外」。それ以外は 2^level 倍の重み */
 export type Level = -3 | -2 | -1 | 0 | 1 | 2 | 3;
-export type EffectId = 'roulette' | 'slot' | 'gacha';
+export type EffectId = 'roulette' | 'slot' | 'gacha' | 'fukubiki' | 'omikuji' | 'sushi' | 'race' | 'plinko';
+/** 決め方: 普通に抽選 / 拒否権を使ってから抽選 / 消去法 */
+export type DrawStyle = 'normal' | 'veto' | 'elim';
 export type EffectChoice = EffectId | 'random';
 export type Rarity = 'normal' | 'rare' | 'super';
 
@@ -34,6 +36,10 @@ export interface Settings {
   recentPenalty: boolean;
   recentDays: number;
   effect: EffectChoice;
+  drawStyle: DrawStyle;
+  /** 拒否権モードの人数と、1人あたりの拒否数 */
+  vetoPlayers: number;
+  vetoEach: number;
 }
 
 export interface State {

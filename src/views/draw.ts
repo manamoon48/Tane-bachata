@@ -1,21 +1,25 @@
-import { confetti } from '../fx/confetti';
 import { EFFECT_IDS, EFFECTS } from '../fx/index';
-import { buildCandidates, formatProb, pick, rarityOf } from '../lottery';
-import { uid } from '../presets';
-import { sfx, unlockAudio, vibrate } from '../sound';
+import { formatProb } from '../lottery';
 import { getState, update } from '../store';
-import type { Candidate, EffectChoice, EffectId, Item, Rarity, State } from '../types';
-import { choice, fill, h, segmented, toast } from '../ui';
+import type { DrawStyle, EffectChoice, State } from '../types';
+import { fill, h, segmented } from '../ui';
+import { runElim, runVeto } from './modes';
+import { currentCandidates, runDraw } from './stage';
 
-export function currentCandidates(s: State): Candidate[] {
-  return buildCandidates(s.items, {
-    mode: s.mode,
-    outFilter: s.outFilter,
-    tags: s.tagFilter,
-    history: s.history,
-    recentPenalty: s.settings.recentPenalty,
-    recentDays: s.settings.recentDays,
-  });
+const STYLE_NOTE: Record<DrawStyle, string> = {
+  normal: '確率どおりに抽選します。',
+  veto: '順番に「これは嫌」を選んでから、残りで抽選します。',
+  elim: '最大8件の候補から、嫌なものを消していき最後の1つに決定。',
+};
+const GO_LABEL: Record<DrawStyle, string> = { normal: '決める！', veto: '拒否して決める', elim: '消去法で決める' };
+
+function stepper(label: string, value: number, min: number, max: number, unit: string, onChange: (v: number) => void): HTMLElement {
+  return h('div', { class: 'mini-stepper' }, [
+    h('span', {}, label),
+    h('button', { disabled: value <= min, onClick: () => onChange(value - 1), 'aria-label': `${label}を減らす` }, '−'),
+    h('b', {}, `${value}${unit}`),
+    h('button', { disabled: value >= max, onClick: () => onChange(value + 1), 'aria-label': `${label}を増やす` }, '+'),
+  ]);
 }
 
 function modeTags(s: State): string[] {
@@ -32,6 +36,9 @@ export function renderDraw(root: HTMLElement): void {
   const s = getState();
   const cands = currentCandidates(s);
   const tags = modeTags(s);
+  const style = s.settings.drawStyle;
+  const need = style === 'normal' ? 1 : 2;
+  const start = () => void (style === 'veto' ? runVeto() : style === 'elim' ? runElim() : runDraw());
 
   const effects: { id: EffectChoice; icon: string; label: string }[] = [
     ...EFFECT_IDS.map((id) => ({ id, icon: EFFECTS[id].icon, label: EFFECTS[id].label })),
@@ -87,6 +94,26 @@ export function renderDraw(root: HTMLElement): void {
         ])
       : null,
     h('section', { class: 'card' }, [
+      h('div', { class: 'card-title' }, '決め方'),
+      segmented<DrawStyle>(
+        [
+          { value: 'normal', label: '🎯 抽選' },
+          { value: 'veto', label: '🙅 拒否権' },
+          { value: 'elim', label: '✂️ 消去法' },
+        ],
+        style,
+        (v) => update((st) => { st.settings.drawStyle = v; }),
+        'small',
+      ),
+      h('p', { class: 'note' }, STYLE_NOTE[style]),
+      style === 'veto'
+        ? h('div', { class: 'veto-opts' }, [
+            stepper('人数', s.settings.vetoPlayers, 2, 4, '人', (v) => update((st) => { st.settings.vetoPlayers = v; })),
+            stepper('1人あたり', s.settings.vetoEach, 1, 3, 'つ', (v) => update((st) => { st.settings.vetoEach = v; })),
+          ])
+        : null,
+    ]),
+    style === 'elim' ? null : h('section', { class: 'card' }, [
       h('div', { class: 'card-title' }, '演出'),
       h(
         'div',
@@ -99,7 +126,7 @@ export function renderDraw(root: HTMLElement): void {
         ),
       ),
     ]),
-    h('button', { class: 'go', disabled: cands.length === 0, onClick: () => void runDraw() }, cands.length ? '決める！' : '候補がありません'),
+    h('button', { class: 'go', disabled: cands.length < need, onClick: start }, cands.length < need ? '候補が足りません' : GO_LABEL[style]),
     h('details', { class: 'card odds' }, [
       h('summary', {}, `候補 ${cands.length} 件の確率を見る`),
       h(
@@ -118,106 +145,4 @@ export function renderDraw(root: HTMLElement): void {
       ),
     ]),
   );
-}
-
-let running = false;
-
-export async function runDraw(forceEffect?: EffectId): Promise<void> {
-  if (running) return;
-  const s = getState();
-  const cands = currentCandidates(s);
-  if (!cands.length) return toast('候補がありません。リストや絞り込みを見直してね');
-  running = true;
-  unlockAudio();
-  sfx.tap();
-
-  const winner = pick(cands);
-  const rarity = rarityOf(winner, cands.length);
-  const effectId: EffectId = forceEffect ?? (s.settings.effect === 'random' ? choice(EFFECT_IDS) : s.settings.effect);
-
-  const abort = new AbortController();
-  const stage = h('div', { class: 'stage-body' });
-  const skip = h('button', { class: 'skip', onClick: () => abort.abort() }, 'スキップ ⏭');
-  const overlay = h('div', { class: `stage fx-${effectId}-bg` }, [skip, stage]);
-  document.body.append(overlay);
-  document.body.classList.add('no-scroll');
-  requestAnimationFrame(() => overlay.classList.add('open'));
-
-  try {
-    await EFFECTS[effectId].run({ stage, cands, winner, rarity, signal: abort.signal });
-  } catch (e) {
-    console.error(e);
-  }
-  skip.remove();
-  showResult(overlay, stage, winner, rarity, effectId, cands.length);
-}
-
-function close(overlay: HTMLElement): void {
-  overlay.classList.remove('open');
-  document.body.classList.remove('no-scroll');
-  setTimeout(() => overlay.remove(), 250);
-  running = false;
-}
-
-function searchUrl(item: Item): { label: string; url: string } {
-  if (item.mode === 'home') {
-    return { label: '🔎 レシピを探す', url: `https://www.google.com/search?q=${encodeURIComponent(`${item.name} レシピ`)}` };
-  }
-  const q = item.kind === 'shop' && item.memo ? item.memo : item.name;
-  return { label: '🗺️ 地図で探す', url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` };
-}
-
-function showResult(overlay: HTMLElement, stage: HTMLElement, c: Candidate, rarity: Rarity, effectId: EffectId, count: number): void {
-  const it = c.item;
-  const link = searchUrl(it);
-  const rarityBadge = rarity === 'super' ? '🌈 超レア！' : rarity === 'rare' ? '✨ レア！' : null;
-  const share = async () => {
-    const text = `今日のごはんは「${it.emoji} ${it.name}」に決定！`;
-    try {
-      if (navigator.share) await navigator.share({ text });
-      else {
-        await navigator.clipboard.writeText(text);
-        toast('コピーしました');
-      }
-    } catch {
-      /* キャンセル */
-    }
-  };
-  // 決定しても画面は閉じず、調べる・共有はそのまま使えるようにする
-  const retry = h('button', { class: 'btn ghost', onClick: () => { close(overlay); setTimeout(() => void runDraw(effectId), 280); } }, '🔁 もう一回');
-  const decide = h('button', { class: 'primary' }, 'これにする！');
-  const card = h('div', { class: `result ${rarity}` }, [
-    rarityBadge ? h('div', { class: 'rarity' }, rarityBadge) : null,
-    h('div', { class: 'result-lead' }, '今日はこれに決定！'),
-    h('div', { class: 'result-emoji' }, it.emoji),
-    h('div', { class: 'result-name' }, it.name),
-    h('div', { class: 'result-meta' }, [
-      it.category ? `${it.category}・` : '',
-      `確率 ${formatProb(c.prob)}（${count}件中）`,
-      c.recent ? '・最近食べた' : '',
-    ]),
-    h('div', { class: 'result-actions' }, [
-      decide,
-      h('a', { class: 'btn', href: link.url, target: '_blank', rel: 'noopener' }, link.label),
-      h('button', { class: 'btn', onClick: () => void share() }, '📤 共有'),
-      retry,
-      h('button', { class: 'btn ghost', onClick: () => close(overlay) }, '閉じる'),
-    ]),
-  ]);
-  decide.addEventListener('click', () => {
-    update((st) => {
-      st.history.unshift({ id: uid(), itemId: it.id, name: it.name, emoji: it.emoji, mode: it.mode, at: Date.now() });
-      st.history = st.history.slice(0, 300);
-    });
-    decide.disabled = true;
-    decide.textContent = '✓ 履歴に記録しました';
-    retry.disabled = true;
-    card.append(h('div', { class: 'stamp' }, '決定'));
-    sfx.stop();
-    vibrate(50);
-  }, { once: true });
-  stage.replaceChildren(card);
-  sfx.fanfare(rarity);
-  vibrate(rarity === 'normal' ? 40 : [60, 40, 60, 40, 120]);
-  confetti(rarity, it.emoji);
 }
