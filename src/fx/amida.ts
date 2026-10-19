@@ -156,7 +156,8 @@ export async function amida(ctx: FxContext): Promise<void> {
   const t0 = performance.now();
   let lastSeg = -1;
   await animate((now) => {
-    let dist = Math.min(total, ((now - t0) / 1000) * speed);
+    const travelled = ((now - t0) / 1000) * speed;
+    let dist = Math.min(total, travelled);
     const trail = [pts[0]];
     let i = 0;
     for (; i < segs.length && dist > segs[i]; i++) {
@@ -172,7 +173,8 @@ export async function amida(ctx: FxContext): Promise<void> {
       sfx.tick();
     }
     draw(trail);
-    return i < segs.length;
+    // 区間長の足し引きは丸め誤差で最後の区間を抜けきれないことがあるので、進んだ距離で終了を判定する
+    return travelled < total;
   }, signal);
   if (signal.aborted) return;
 
