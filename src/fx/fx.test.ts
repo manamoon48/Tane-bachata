@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildCandidates } from '../lottery';
 import type { Item } from '../types';
 import { makeAmida, trace } from './amida';
-import { findPath, makeBoard } from './plinko';
+import { findPath, makeBoard, MAX_SLOTS, pegSpacing, R } from './plinko';
 import { planRace, progressAt } from './race';
 
 const items: Item[] = Array.from({ length: 12 }, (_, i) => ({
@@ -55,14 +55,23 @@ describe('race', () => {
 });
 
 describe('plinko', () => {
-  it('どの枠を狙っても、その枠に落ちる軌跡を返す', () => {
-    const b = makeBoard(360, 500, cands.map((c) => c.prob));
-    cands.forEach((_, target) => {
-      const frames = findPath(b, 40 + target * 23, target);
-      const last = frames[frames.length - 1];
-      const slot = b.slots.findIndex((s) => last.x >= s.x0 && last.x < s.x1);
-      expect(slot).toBe(target);
+  it('上の狭い口から落としても、どの枠を狙ってもその枠に落ちる', () => {
+    const W = 374;
+    const shown = cands.slice(0, MAX_SLOTS);
+    const total = shown.reduce((s, c) => s + c.weight, 0);
+    const b = makeBoard(W, 520, shown.map((c) => c.weight / total));
+    const sway = pegSpacing(W) * 0.9;
+    shown.forEach((_, target) => {
+      for (const x0 of [W / 2 - sway, W / 2, W / 2 + sway]) {
+        const frames = findPath(b, x0, target);
+        const last = frames[frames.length - 1];
+        expect(b.slots.findIndex((s) => last.x >= s.x0 && last.x < s.x1)).toBe(target);
+      }
     });
+  });
+
+  it('玉がピンの間を通れる', () => {
+    expect(pegSpacing(374) - 8).toBeGreaterThan(2 * R + 4);
   });
 });
 

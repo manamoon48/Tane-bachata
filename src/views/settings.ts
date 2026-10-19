@@ -70,7 +70,7 @@ export function renderSettings(root: HTMLElement): void {
       h('div', { class: 'card-title' }, 'ホーム画面に追加'),
       h('p', { class: 'note' }, 'iPhone: Safari の共有ボタン →「ホーム画面に追加」で、アプリのように全画面で使えます。オフラインでも動きます。'),
     ]),
-    h('p', { class: 'version' }, 'なんでもいいよ v0.1'),
+    h('p', { class: 'version' }, '今日、何食べる？ v0.2'),
   );
 }
 

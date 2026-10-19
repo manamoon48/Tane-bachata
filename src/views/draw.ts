@@ -8,7 +8,7 @@ import { currentCandidates, runDraw } from './stage';
 
 const STYLE_NOTE: Record<DrawStyle, string> = {
   normal: '確率どおりに抽選します。',
-  veto: '順番に「これは嫌」を選んでから、残りで抽選します。',
+  veto: '「これは嫌」を選んでから、残りで抽選します（複数人なら順番に）。',
   elim: '最大8件の候補から、嫌なものを消していき最後の1つに決定。',
 };
 const GO_LABEL: Record<DrawStyle, string> = { normal: '決める！', veto: '拒否して決める', elim: '消去法で決める' };
@@ -47,7 +47,7 @@ export function renderDraw(root: HTMLElement): void {
 
   fill(root,
     h('header', { class: 'hero' }, [
-      h('div', { class: 'hero-q' }, '今日、何食べたい？'),
+      h('div', { class: 'hero-q' }, '今日、何食べる？'),
       h('div', { class: 'hero-a' }, '「なんでもいい」なら、運命に決めてもらおう。'),
     ]),
     segmented(
@@ -108,8 +108,10 @@ export function renderDraw(root: HTMLElement): void {
       h('p', { class: 'note' }, STYLE_NOTE[style]),
       style === 'veto'
         ? h('div', { class: 'veto-opts' }, [
-            stepper('人数', s.settings.vetoPlayers, 2, 4, '人', (v) => update((st) => { st.settings.vetoPlayers = v; })),
-            stepper('1人あたり', s.settings.vetoEach, 1, 3, 'つ', (v) => update((st) => { st.settings.vetoEach = v; })),
+            stepper('人数', s.settings.vetoPlayers, 1, 4, '人', (v) => update((st) => { st.settings.vetoPlayers = v; })),
+            s.settings.vetoPlayers > 1
+              ? stepper('1人あたり', s.settings.vetoEach, 1, 3, 'つ', (v) => update((st) => { st.settings.vetoEach = v; }))
+              : h('span', { class: 'note' }, '残り2つになるまで、いくつでも消せます'),
           ])
         : null,
     ]),

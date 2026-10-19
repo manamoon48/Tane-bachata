@@ -12,6 +12,23 @@ const PALETTE = [
 
 interface Sector { a0: number; a1: number }
 
+// 先端 (10,0) が刺さる点。細い針 → バレル → シャフト → 赤い羽根の順
+const DART_SVG = `<svg viewBox="0 0 20 66" width="26" height="86" aria-hidden="true">
+  <polygon points="10,0 11.2,18 8.8,18" fill="#e6e9ec" stroke="#7d8790" stroke-width=".6"/>
+  <rect x="7.2" y="17" width="5.6" height="17" rx="2" fill="#4a5058"/>
+  <path d="M7.2 21h5.6M7.2 24h5.6M7.2 27h5.6M7.2 30h5.6" stroke="#8a929c" stroke-width=".8"/>
+  <rect x="9" y="33" width="2" height="16" fill="#cfd5db"/>
+  <polygon points="10,44 1,62 1,66 10,58" fill="#e8132b"/>
+  <polygon points="10,44 19,62 19,66 10,58" fill="#b30f22"/>
+  <polygon points="9,46 11,46 11,64 9,64" fill="#ff5a6a"/>
+</svg>`;
+
+function dartEl(cls = ''): HTMLElement {
+  const el = h('div', { class: `dart ${cls}` });
+  el.innerHTML = DART_SVG;
+  return el;
+}
+
 function drawBoard(cands: FxContext['cands'], secs: Sector[], size: number, dpr: number): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = c.height = size * dpr;
@@ -74,7 +91,7 @@ export async function darts(ctx: FxContext): Promise<void> {
   const aim = h('div', { class: 'dart-aim' });
   const stuck = h('div', { class: 'dart-stuck', style: `width:${size}px;height:${size}px` });
   const wrap = h('div', { class: 'dart-wrap', style: `width:${size}px;height:${size}px` }, [canvas, stuck, aim]);
-  const caption = h('div', { class: 'fx-caption' }, '照準が合ったらタップで投げよう！');
+  const caption = h('div', { class: 'fx-caption' }, 'タイミングよくタップで投げよう！');
   const scene = h('div', { class: 'fx-darts' }, [caption, wrap]);
   stage.append(scene);
 
@@ -136,7 +153,7 @@ export async function darts(ctx: FxContext): Promise<void> {
   let delta = (((ha - local - natural) % TAU) + TAU) % TAU;
   if (delta > Math.PI) delta -= TAU;
 
-  const dart = h('div', { class: 'dart flying' }, h('i'));
+  const dart = dartEl('flying');
   wrap.append(dart);
   aim.remove();
   sfx.start();
@@ -156,8 +173,7 @@ export async function darts(ctx: FxContext): Promise<void> {
   sfx.stop();
   vibrate(40);
   dart.remove();
-  const pin = h('div', { class: 'dart' }, h('i'));
-  pin.style.transform = `translate(${hx}px, ${hy}px)`;
+  const pin = dartEl();
   stuck.append(pin);
   const rImpact = rot;
   const td = performance.now();
@@ -166,7 +182,9 @@ export async function darts(ctx: FxContext): Promise<void> {
     const u = Math.min(1, (now - td) / 1000 / decel);
     rot = rImpact + ((SPIN * decel) / 2) * (1 - (1 - u) ** 2);
     paint();
-    stuck.style.transform = `rotate(${rot - rImpact}rad)`;
+    // 刺さった位置は盤と一緒に回るが、ダーツ自体の向きは保つ
+    const d = rot - rImpact;
+    pin.style.transform = `translate(${hx * Math.cos(d) - hy * Math.sin(d)}px, ${hx * Math.sin(d) + hy * Math.cos(d)}px)`;
     return u < 1;
   }, signal);
   if (signal.aborted) return;

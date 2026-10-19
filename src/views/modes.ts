@@ -20,9 +20,17 @@ export async function runVeto(): Promise<void> {
   st.skip.textContent = 'やめる ✕';
   st.skip.addEventListener('click', () => { cancelled = true; st.close(); });
 
-  const { vetoPlayers: players, vetoEach: each } = s.settings;
+  const { vetoPlayers: players, vetoEach } = s.settings;
+  // 1人のときは数の制限なしで、残り2つになるまで消せる
+  const solo = players === 1;
+  const each = solo ? Infinity : vetoEach;
+  const keep = solo ? 2 : 1;
   const vetoed = new Map<string, number>(); // itemId → 誰が拒否したか
   for (let p = 1; p <= players && !cancelled; p++) {
+    if (solo) {
+      await pickVetoes(st, cands, vetoed, p, each, keep);
+      break;
+    }
     // 端末の受け渡し画面
     const ok = h('button', { class: 'primary big' }, 'OK、選ぶ');
     st.body.replaceChildren(
@@ -36,7 +44,7 @@ export async function runVeto(): Promise<void> {
     await waitClick(ok);
     if (cancelled) return;
     sfx.tap();
-    await pickVetoes(st, cands, vetoed, p, each);
+    await pickVetoes(st, cands, vetoed, p, each, keep);
   }
   if (cancelled) return;
 
@@ -57,7 +65,7 @@ export async function runVeto(): Promise<void> {
   void runDraw({ exclude: new Set(vetoed.keys()) });
 }
 
-function pickVetoes(st: Stage, cands: Candidate[], vetoed: Map<string, number>, player: number, each: number): Promise<void> {
+function pickVetoes(st: Stage, cands: Candidate[], vetoed: Map<string, number>, player: number, each: number, keep: number): Promise<void> {
   return new Promise((resolve) => {
     const chosen = new Set<string>();
     const remainingAfter = () => cands.length - vetoed.size - chosen.size;
@@ -75,8 +83,8 @@ function pickVetoes(st: Stage, cands: Candidate[], vetoed: Map<string, number>, 
               disabled: !!by,
               onClick: () => {
                 if (on) chosen.delete(c.item.id);
-                else if (chosen.size < each && remainingAfter() > 1) chosen.add(c.item.id);
-                else return toast(chosen.size >= each ? `${each}つまでです` : '全部は消せません');
+                else if (chosen.size < each && remainingAfter() > keep) chosen.add(c.item.id);
+                else return toast(chosen.size >= each ? `${each}つまでです` : `${keep}つは残してね`);
                 sfx.tap();
                 render();
               },
@@ -85,7 +93,7 @@ function pickVetoes(st: Stage, cands: Candidate[], vetoed: Map<string, number>, 
           );
         }),
       );
-      done.textContent = chosen.size ? `${chosen.size}つ拒否して次へ` : 'パス（拒否しない）';
+      done.textContent = chosen.size ? `${chosen.size}個拒否して${Number.isFinite(each) ? '次へ' : '抽選へ'}` : 'パス（拒否しない）';
     };
     render();
     done.addEventListener('click', () => {
@@ -97,7 +105,11 @@ function pickVetoes(st: Stage, cands: Candidate[], vetoed: Map<string, number>, 
       resolve();
     });
     st.body.replaceChildren(
-      h('div', { class: 'veto' }, [h('div', { class: 'veto-title' }, `${player}人目：嫌なものを最大${each}つ`), grid, done]),
+      h('div', { class: 'veto' }, [
+        h('div', { class: 'veto-title' }, Number.isFinite(each) ? `${player}人目：嫌なものを最大${each}つ` : `嫌なものを選んでね（${keep}つ残るまで）`),
+        grid,
+        done,
+      ]),
     );
   });
 }
