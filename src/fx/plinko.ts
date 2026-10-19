@@ -1,4 +1,5 @@
 import { sfx, vibrate } from '../sound';
+import { sampleWeighted } from '../lottery';
 import { h, rand, sleep, animate } from '../ui';
 import type { FxContext } from './index';
 
@@ -11,22 +12,30 @@ interface Board {
 }
 interface Frame { x: number; y: number; hit: number }
 
-const R = 7; // 玉の半径
+export const R = 14; // 玉の半径
 const PR = 4; // ピンの半径
+const ROWS = 7;
+/** 受け口の最大数（候補が多いときは確率に応じて選ぶ） */
+export const MAX_SLOTS = 8;
+const START_Y = R + 8;
+
+/** 上が狭い三角形にピンを並べる（上から2本, 3本, …） */
+export function pegSpacing(W: number): number {
+  return W / (ROWS + 1.5);
+}
 
 export function makeBoard(W: number, H: number, probs: number[]): Board {
   const pegs: { x: number; y: number }[] = [];
-  const rows = 9;
-  const top = 70;
-  const slotTop = H - 70;
-  const gapY = (slotTop - top - 30) / (rows - 1);
-  const gapX = W / 8;
-  for (let r = 0; r < rows; r++) {
-    const off = r % 2 ? gapX / 2 : 0;
-    for (let x = off + gapX / 2; x < W - 4; x += gapX) pegs.push({ x, y: top + r * gapY });
+  const top = START_Y + R + 34;
+  const slotTop = H - 74;
+  const gapX = pegSpacing(W);
+  const gapY = (slotTop - 36 - top) / (ROWS - 1);
+  for (let r = 0; r < ROWS; r++) {
+    const n = r + 2;
+    for (let i = 0; i < n; i++) pegs.push({ x: W / 2 + (i - (n - 1) / 2) * gapX, y: top + r * gapY });
   }
-  // 幅は確率に比例（細すぎる枠は最低幅を確保）
-  const minW = Math.min(14, W / probs.length);
+  // 幅は確率に比例（玉が入るよう最低幅を確保）
+  const minW = Math.min(2 * R + 6, W / probs.length);
   const raw = probs.map((p) => Math.max(minW, p * W));
   const scale = W / raw.reduce((a, b) => a + b, 0);
   let x = 0;
@@ -39,10 +48,10 @@ export function makeBoard(W: number, H: number, probs: number[]): Board {
 }
 
 /** 固定ステップで物理を回し、軌跡を記録する。steer>0 なら目標枠へ少しずつ寄せる */
-function simulate(b: Board, x0: number, seed: number, target: number, steer: number): { frames: Frame[]; slot: number } {
+export function simulate(b: Board, x0: number, seed: number, target: number, steer: number): { frames: Frame[]; slot: number } {
   let s = seed;
   const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-  let x = x0, y = 20, vx = (rnd() - 0.5) * 30, vy = 0;
+  let x = x0, y = START_Y, vx = (rnd() - 0.5) * 30, vy = 0;
   const g = 900, dt = 1 / 120;
   const frames: Frame[] = [];
   const tx = (b.slots[target].x0 + b.slots[target].x1) / 2;
@@ -108,11 +117,14 @@ export function findPath(b: Board, x0: number, target: number): Frame[] {
 }
 
 export async function plinko(ctx: FxContext): Promise<void> {
-  const { stage, signal, winner, cands, rarity } = ctx;
+  const { stage, signal, winner, rarity } = ctx;
+  // 玉を大きくした分、受け口は最大8つ（当選＋確率に応じて選んだ候補）
+  const cands = sampleWeighted(ctx.cands, MAX_SLOTS, winner).sort((a, b) => ctx.cands.indexOf(a) - ctx.cands.indexOf(b));
   const W = Math.min((stage.clientWidth || window.innerWidth) - 8, 400);
   const H = Math.min(window.innerHeight * 0.62, 520);
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
-  const board = makeBoard(W, H, cands.map((c) => c.prob));
+  const total = cands.reduce((sum, c) => sum + c.weight, 0);
+  const board = makeBoard(W, H, cands.map((c) => c.weight / total));
   const target = cands.indexOf(winner);
 
   const canvas = h('canvas', { class: 'plinko', style: `width:${W}px;height:${H}px` });
@@ -120,7 +132,7 @@ export async function plinko(ctx: FxContext): Promise<void> {
   canvas.height = H * dpr;
   const g = canvas.getContext('2d')!;
   g.scale(dpr, dpr);
-  const caption = h('div', { class: 'fx-caption' }, '上をタップして玉を落とそう');
+  const caption = h('div', { class: 'fx-caption' }, 'タイミングよくタップ！');
   stage.append(h('div', { class: 'fx-plinko' }, [caption, canvas]));
 
   const COLORS = ['#ff6b4a', '#ffc94a', '#4ad6a6', '#4aa8ff', '#c56bff', '#ff8fc2', '#ff9f43', '#7bd389'];
@@ -136,11 +148,16 @@ export async function plinko(ctx: FxContext): Promise<void> {
       g.fillStyle = 'rgba(255,255,255,.9)';
       g.fillRect(sl.x0 - 1, board.slotTop, 2, H - board.slotTop);
       const w = sl.x1 - sl.x0;
-      if (w >= 16) {
-        g.font = `${Math.min(22, w * 0.8)}px system-ui, "Apple Color Emoji", sans-serif`;
-        g.textAlign = 'center';
-        g.textBaseline = 'middle';
-        g.fillText(cands[i].item.emoji, (sl.x0 + sl.x1) / 2, H - 24);
+      const cx = (sl.x0 + sl.x1) / 2;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.font = `${Math.min(28, w * 0.75)}px system-ui, "Apple Color Emoji", sans-serif`;
+      g.fillText(cands[i].item.emoji, cx, H - 32);
+      if (w >= 54) {
+        g.font = 'bold 10px system-ui, sans-serif';
+        g.fillStyle = '#fff';
+        const name = cands[i].item.name;
+        g.fillText(name.length > 5 ? name.slice(0, 4) + '…' : name, cx, H - 10);
       }
     });
     // ピン
@@ -154,7 +171,7 @@ export async function plinko(ctx: FxContext): Promise<void> {
     if (ball) {
       g.beginPath();
       g.arc(ball.x, ball.y, R, 0, Math.PI * 2);
-      const grad = g.createRadialGradient(ball.x - 2, ball.y - 3, 1, ball.x, ball.y, R);
+      const grad = g.createRadialGradient(ball.x - R * 0.3, ball.y - R * 0.4, 2, ball.x, ball.y, R);
       grad.addColorStop(0, '#fff');
       grad.addColorStop(1, rarity === 'super' ? '#c56bff' : rarity === 'rare' ? '#f5b700' : '#cfd8e3');
       g.fillStyle = grad;
@@ -165,22 +182,20 @@ export async function plinko(ctx: FxContext): Promise<void> {
     }
   };
 
-  // ガイドの玉を左右に揺らしながら、タップ位置で落とす
+  // ガイドの玉を上の狭い口の上で揺らし、タップした瞬間の位置から落とす
+  const sway = pegSpacing(W) * 0.9;
   let aimX = W / 2;
   const start = performance.now();
   const x0 = await new Promise<number>((resolve) => {
     let done = false;
     const go = (x: number) => { if (!done) { done = true; resolve(x); } };
-    canvas.addEventListener('pointerdown', (e) => {
-      const r = canvas.getBoundingClientRect();
-      go(Math.max(R, Math.min(W - R, e.clientX - r.left)));
-    });
+    stage.addEventListener('pointerdown', () => go(aimX));
     signal.addEventListener('abort', () => go(aimX));
     setTimeout(() => go(aimX), 8000);
     void animate((now) => {
       if (done) return false;
-      aimX = W / 2 + Math.sin((now - start) / 500) * W * 0.35;
-      draw({ x: aimX, y: 20 });
+      aimX = W / 2 + Math.sin((now - start) / 450) * sway;
+      draw({ x: aimX, y: START_Y });
     }, signal);
   });
   if (signal.aborted) return;

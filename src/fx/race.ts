@@ -55,8 +55,8 @@ export function planRace(runners: Candidate[], winner: Candidate, style: RaceSty
 }
 
 export function progressAt(p: Plan, t: number): number {
-  // ゴール後の各馬は勝者のペースのまま伸ばす
-  if (t >= 1) return Math.min(1, p.pts[K] + (t - 1));
+  // 1着がゴールした瞬間に全員その位置で止める（順位が見やすいように）
+  if (t >= 1) return p.pts[K];
   if (t <= 0) return 0;
   let k = 0;
   while (k < K - 1 && t >= KNOTS[k + 1]) k++;
@@ -134,7 +134,7 @@ export async function race(ctx: FxContext): Promise<void> {
   const t0 = performance.now();
   let goalShown = false;
   await animate((now) => {
-    const t = (now - t0) / 1000 / T;
+    const t = Math.min(1, (now - t0) / 1000 / T);
     place(t);
     if (li < lines.length && t >= lines[li][0]) ticker.textContent = lines[li++][1](t);
     if (now - lastGallop > 330) {
@@ -151,10 +151,15 @@ export async function race(ctx: FxContext): Promise<void> {
       const how = style === 'pack' ? '大接戦を制して' : style === 'comeback' ? '差し切って' : '逃げ切って';
       ticker.textContent = `${winner.item.name}、${how}ゴール！${gap < 0.012 ? '（ハナ差！）' : gap < 0.03 ? '（クビ差！）' : ''}`;
       lanes.find((l) => l.plan.c === winner)!.lane.classList.add('win');
+      track.classList.remove('running');
+      // 着順を表示
+      [...lanes]
+        .sort((a, b) => b.plan.pts[K] - a.plan.pts[K])
+        .forEach((l, i) => l.runner.append(h('span', { class: `rank r${i + 1}` }, `${i + 1}着`)));
       sfx.stop();
       vibrate([40, 30, 80]);
     }
-    return t < 1.25;
+    return t < 1;
   }, signal);
-  await sleep(1200, signal);
+  await sleep(1500, signal);
 }

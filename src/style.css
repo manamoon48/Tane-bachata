@@ -681,16 +681,15 @@ a { color: inherit; }
 .dart-aim::before, .dart-aim::after { content: ""; position: absolute; background: #ff4a5a; }
 .dart-aim::before { left: 50%; top: -10px; bottom: -10px; width: 2px; margin-left: -1px; }
 .dart-aim::after { top: 50%; left: -10px; right: -10px; height: 2px; margin-top: -1px; }
-/* 先端が (0,0) に来るダーツ */
+/* 先端が (0,0) に来るダーツ。羽根は手前（下）側 */
 .dart { position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 3; pointer-events: none; }
-.dart i {
-  position: absolute; left: -3px; bottom: 0; width: 6px; height: 54px; transform: rotate(-18deg); transform-origin: 50% 100%;
-  background: linear-gradient(180deg, transparent 0 14px, #9aa 14px 40px, #555 40px 50px, #ddd 50px);
-  border-radius: 3px 3px 1px 1px; filter: drop-shadow(2px 4px 3px rgba(0, 0, 0, 0.5));
+.dart svg {
+  position: absolute; left: -13px; top: 0; overflow: visible;
+  transform-origin: 13px 0; transform: rotate(14deg); filter: drop-shadow(3px 5px 3px rgba(0, 0, 0, 0.5));
 }
-.dart i::before {
-  content: ""; position: absolute; left: -7px; top: 0; width: 20px; height: 18px;
-  background: linear-gradient(90deg, #ff4a5a 0 45%, #c41f33 45%); clip-path: polygon(50% 0, 100% 100%, 50% 80%, 0 100%);
+.dart:not(.flying)::after {
+  content: ""; position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7); z-index: -1;
 }
 
 /* あみだ */
@@ -755,3 +754,11 @@ a { color: inherit; }
 .pcard.chosen.super .pcard-front { border-color: #fff; box-shadow: 0 0 20px #ff8fc2, 0 0 40px #4aa8ff; }
 .pcard.other { opacity: 0.45; filter: grayscale(0.6); }
 .pcard-other-label { position: absolute; bottom: -24px; font-size: 13px; opacity: 0.7; animation: prize-pop 0.4s; }
+.rank {
+  position: absolute; right: 100%; top: 50%; transform: translateY(-50%); margin-right: 2px; white-space: nowrap;
+  background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 11px; font-weight: 900; padding: 1px 6px; border-radius: 8px;
+  animation: prize-pop 0.3s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.rank.r1 { background: #f5b700; color: #3a2a20; font-size: 13px; }
+.rank.r2 { background: #c9d1d9; color: #3a2a20; }
+.rank.r3 { background: #c98a4b; color: #fff; }
