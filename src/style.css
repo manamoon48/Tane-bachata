@@ -211,8 +211,13 @@ a { color: inherit; }
 .editor textarea { font-family: ui-monospace, monospace; font-size: 12px; }
 .name-row { display: flex; gap: 8px; }
 .name-row .emoji-input { width: 64px; flex: none; text-align: center; font-size: 26px; padding: 4px; }
-.emoji-picks { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-.emoji-picks button { flex: none; font-size: 22px; width: 40px; height: 40px; border: 0; border-radius: 10px; background: var(--chip); }
+.emoji-picker { display: flex; flex-direction: column; gap: 8px; }
+.emoji-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.emoji-tabs button { flex: none; border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 700; color: var(--sub); }
+.emoji-tabs button.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 4px; max-height: 180px; overflow-y: auto; }
+.emoji-grid button { font-size: 24px; height: 42px; border: 2px solid transparent; border-radius: 10px; background: var(--chip); padding: 0; }
+.emoji-grid button.on { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 15%, var(--card)); }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field > span { font-size: 12px; font-weight: 700; color: var(--sub); }
 .level-pick { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
