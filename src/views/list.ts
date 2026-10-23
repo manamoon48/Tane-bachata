@@ -1,5 +1,5 @@
 import { buildCandidates, formatProb, LEVELS, levelLabel, weightLabel } from '../lottery';
-import { EMOJI_PICKS, uid } from '../presets';
+import { EMOJI_GROUPS, uid } from '../presets';
 import { getState, update } from '../store';
 import type { Item, Level, Mode, OutKind } from '../types';
 import { fill, h, openSheet, segmented, toast } from '../ui';
@@ -82,6 +82,23 @@ function openEditor(src: Item): void {
     const catInput = h('input', { value: draft.category, list: 'cat-list', placeholder: '例: 和食' });
     const tagInput = h('input', { value: draft.tags.join(' '), placeholder: 'スペース区切り 例: がっつり 時短' });
     const memoInput = h('input', { value: draft.memo, placeholder: '店名＋駅名や住所など' });
+    // 絵文字はカテゴリのタブで切り替えて選ぶ（今の絵文字があるタブから開く）
+    let tab = Math.max(0, EMOJI_GROUPS.findIndex((g) => g.list.includes(draft.emoji)));
+    const emojiTabs = h('div', { class: 'emoji-tabs' });
+    const emojiGrid = h('div', { class: 'emoji-grid' });
+    const drawEmoji = () => {
+      emojiTabs.replaceChildren(
+        ...EMOJI_GROUPS.map((g, i) => h('button', { type: 'button', class: i === tab ? 'on' : '', onClick: () => { tab = i; drawEmoji(); } }, g.label)),
+      );
+      emojiGrid.replaceChildren(
+        ...EMOJI_GROUPS[tab].list.map((e) =>
+          h('button', { type: 'button', class: e === emojiInput.value ? 'on' : '', 'aria-label': e, onClick: () => { emojiInput.value = e; drawEmoji(); } }, e),
+        ),
+      );
+    };
+    const emojiPicker = h('div', { class: 'emoji-picker' }, [emojiTabs, emojiGrid]);
+    emojiInput.addEventListener('input', drawEmoji);
+    drawEmoji();
     let level: Level = draft.level;
     let kind = draft.kind;
 
@@ -163,7 +180,7 @@ function openEditor(src: Item): void {
     return h('form', { class: 'editor', onSubmit: (e: Event) => { e.preventDefault(); save(); } }, [
       h('h2', {}, isNew ? '追加' : '編集'),
       h('div', { class: 'name-row' }, [emojiInput, nameInput]),
-      h('div', { class: 'emoji-picks' }, EMOJI_PICKS.map((e) => h('button', { type: 'button', onClick: () => { emojiInput.value = e; } }, e))),
+      emojiPicker,
       draft.mode === 'out' ? h('div', { class: 'field' }, [h('span', {}, '種類'), kindBox]) : null,
       draft.mode === 'out' ? memoField : null,
       h('label', { class: 'field' }, [h('span', {}, 'カテゴリ（スロットのジャンル）'), catInput]),
